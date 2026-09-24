@@ -39,12 +39,17 @@ function App() {
     useState<Ticket | null>(null);
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [currentTime, setCurrentTime] = useState(new Date());
+
+  const [currentTime, setCurrentTime] =
+    useState(new Date());
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Load dashboard data
+  // --------------------------------
+  // Load dashboard
+  // --------------------------------
+
   const loadDashboard = () => {
     fetch("http://127.0.0.1:8000/api/dashboard/")
       .then((response) => {
@@ -59,11 +64,16 @@ function App() {
         setError("");
       })
       .catch(() => {
-        setError("Unable to connect to Django backend.");
+        setError(
+          "Unable to connect to Django backend."
+        );
       });
   };
 
-  // Load all tickets
+  // --------------------------------
+  // Load tickets
+  // --------------------------------
+
   const loadTickets = () => {
     fetch("http://127.0.0.1:8000/api/tickets/")
       .then((response) => {
@@ -81,11 +91,25 @@ function App() {
       });
   };
 
-  // Load data when page starts
+  // --------------------------------
+  // Initial load + auto refresh
+  // --------------------------------
+
   useEffect(() => {
     loadDashboard();
     loadTickets();
+
+    const pollInterval = setInterval(() => {
+      loadDashboard();
+      loadTickets();
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
   }, []);
+
+  // --------------------------------
+  // Countdown timer
+  // --------------------------------
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -95,10 +119,15 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // --------------------------------
   // Create ticket
+  // --------------------------------
+
   const createTicket = async () => {
     if (!customerName.trim() || !message.trim()) {
-      setError("Please enter customer name and ticket message.");
+      setError(
+        "Please enter customer name and ticket message."
+      );
       return;
     }
 
@@ -111,11 +140,9 @@ function App() {
         "http://127.0.0.1:8000/api/tickets/",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             customer_name: customerName,
             message: message,
@@ -134,10 +161,8 @@ function App() {
       setCustomerName("");
       setMessage("");
 
-      // Refresh dashboard and ticket table
       loadDashboard();
       loadTickets();
-
     } catch {
       setError("Unable to create ticket.");
     } finally {
@@ -145,21 +170,38 @@ function App() {
     }
   };
 
-  const getRemainingTime = (deadline: string) => {
-    const deadlineTime = new Date(deadline).getTime();
+  // --------------------------------
+  // SLA countdown
+  // --------------------------------
+
+  const getRemainingTime = (
+    deadline: string
+  ) => {
+    const deadlineTime =
+      new Date(deadline).getTime();
+
     const now = currentTime.getTime();
 
-    const difference = deadlineTime - now;
+    const difference =
+      deadlineTime - now;
 
     if (difference <= 0) {
       return "SLA Breached";
     }
 
-    const totalSeconds = Math.floor(difference / 1000);
+    const totalSeconds =
+      Math.floor(difference / 1000);
 
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+    const hours =
+      Math.floor(totalSeconds / 3600);
+
+    const minutes =
+      Math.floor(
+        (totalSeconds % 3600) / 60
+      );
+
+    const seconds =
+      totalSeconds % 60;
 
     if (hours > 0) {
       return `${hours}h ${minutes}m ${seconds}s`;
@@ -168,24 +210,50 @@ function App() {
     return `${minutes}m ${seconds}s`;
   };
 
+  // --------------------------------
+  // SLA alerts
+  // --------------------------------
+
+  const alertTickets = tickets
+    .filter(
+      (ticket) =>
+        ticket.sla_risk === "high" ||
+        ticket.status === "escalated"
+    )
+    .slice(0, 5);
+
+  // --------------------------------
+  // UI
+  // --------------------------------
+
   return (
     <div className="dashboard">
 
-      {/* Header */}
+      {/* =========================
+          HEADER
+      ========================== */}
 
       <header className="header">
+
         <div>
           <h1>SLA Support Dashboard</h1>
 
           <p>
-            Smart Support Ticket Routing & Escalation System
+            Smart Support Ticket Routing &
+            Escalation System
           </p>
         </div>
 
         <div className="status">
           ● System Active
         </div>
+
       </header>
+
+
+      {/* =========================
+          ERROR
+      ========================== */}
 
       {error && (
         <div className="error">
@@ -193,7 +261,10 @@ function App() {
         </div>
       )}
 
-      {/* Dashboard Statistics */}
+
+      {/* =========================
+          DASHBOARD STATISTICS
+      ========================== */}
 
       <section className="cards">
 
@@ -205,6 +276,7 @@ function App() {
           </strong>
         </div>
 
+
         <div className="card">
           <h3>Open Tickets</h3>
 
@@ -213,6 +285,7 @@ function App() {
           </strong>
         </div>
 
+
         <div className="card">
           <h3>High Risk</h3>
 
@@ -220,6 +293,7 @@ function App() {
             {dashboard?.high_risk_tickets ?? "-"}
           </strong>
         </div>
+
 
         <div className="card">
           <h3>Escalated</h3>
@@ -231,7 +305,108 @@ function App() {
 
       </section>
 
-      {/* Create Ticket */}
+
+      {/* =========================
+          SLA ALERTS
+      ========================== */}
+
+      <section className="panel alerts-panel">
+
+        <div className="panel-header">
+
+          <div>
+
+            <h2>SLA Alerts</h2>
+
+            <p>
+              Real-time tickets requiring attention
+            </p>
+
+          </div>
+
+          <span className="live-indicator">
+            ● LIVE
+          </span>
+
+        </div>
+
+
+        <div className="alert-list">
+
+          {alertTickets.length === 0 ? (
+
+            <div className="no-alerts">
+              ✓ No critical SLA alerts
+            </div>
+
+          ) : (
+
+            alertTickets.map((ticket) => (
+
+              <div
+                className="alert-item"
+                key={ticket.id}
+              >
+
+                <div className="alert-icon">
+                  ⚠
+                </div>
+
+
+                <div className="alert-content">
+
+                  <strong>
+                    Ticket #{ticket.id}
+                  </strong>
+
+                  <span>
+                    {ticket.customer_name} ·{" "}
+                    {ticket.category}
+                  </span>
+
+                  <small>
+                    SLA remaining:{" "}
+                    {getRemainingTime(
+                      ticket.sla_deadline
+                    )}
+                  </small>
+
+                </div>
+
+
+                <div className="alert-status">
+
+                  {ticket.status ===
+                  "escalated" ? (
+
+                    <span className="alert-escalated">
+                      ESCALATED
+                    </span>
+
+                  ) : (
+
+                    <span className="alert-high">
+                      HIGH RISK
+                    </span>
+
+                  )}
+
+                </div>
+
+              </div>
+
+            ))
+
+          )}
+
+        </div>
+
+      </section>
+
+
+      {/* =========================
+          CREATE TICKET
+      ========================== */}
 
       <section className="panel">
 
@@ -244,18 +419,24 @@ function App() {
             placeholder="Customer name"
             value={customerName}
             onChange={(e) =>
-              setCustomerName(e.target.value)
+              setCustomerName(
+                e.target.value
+              )
             }
           />
+
 
           <textarea
             placeholder="Describe the customer problem..."
             value={message}
             onChange={(e) =>
-              setMessage(e.target.value)
+              setMessage(
+                e.target.value
+              )
             }
             rows={5}
           />
+
 
           <button
             onClick={createTicket}
@@ -270,7 +451,10 @@ function App() {
 
       </section>
 
-      {/* Automation Result */}
+
+      {/* =========================
+          AUTOMATION RESULT
+      ========================== */}
 
       {createdTicket && (
 
@@ -288,6 +472,7 @@ function App() {
               </strong>
             </div>
 
+
             <div>
               <span>Category</span>
 
@@ -295,6 +480,7 @@ function App() {
                 {createdTicket.category}
               </strong>
             </div>
+
 
             <div>
               <span>Urgency</span>
@@ -304,12 +490,14 @@ function App() {
               </strong>
             </div>
 
+
             <div>
               <span>SLA Risk</span>
 
               <strong
                 className={
-                  createdTicket.sla_risk === "high"
+                  createdTicket.sla_risk ===
+                  "high"
                     ? "danger"
                     : ""
                 }
@@ -317,6 +505,7 @@ function App() {
                 {createdTicket.sla_risk}
               </strong>
             </div>
+
 
             <div>
               <span>Assigned Agent</span>
@@ -326,6 +515,7 @@ function App() {
                   "No agent available"}
               </strong>
             </div>
+
 
             <div>
               <span>Status</span>
@@ -341,7 +531,10 @@ function App() {
 
       )}
 
-      {/* Ticket Monitoring */}
+
+      {/* =========================
+          TICKET MONITORING
+      ========================== */}
 
       <section className="panel">
 
@@ -366,6 +559,7 @@ function App() {
 
             </thead>
 
+
             <tbody>
 
               {tickets.map((ticket) => (
@@ -376,57 +570,79 @@ function App() {
                     #{ticket.id}
                   </td>
 
+
                   <td>
                     {ticket.customer_name}
                   </td>
+
 
                   <td className="capitalize">
                     {ticket.category}
                   </td>
 
+
                   <td>
+
                     <span
                       className={`badge ${ticket.urgency}`}
                     >
                       {ticket.urgency}
                     </span>
+
                   </td>
 
+
                   <td>
+
                     <span
                       className={`badge ${ticket.sla_risk}`}
                     >
                       {ticket.sla_risk}
                     </span>
+
                   </td>
 
+
                   <td>
+
                     <span
                       className={
-                        getRemainingTime(ticket.sla_deadline) === "SLA Breached"
+                        getRemainingTime(
+                          ticket.sla_deadline
+                        ) === "SLA Breached"
                           ? "sla-time breached"
-                          : ticket.sla_risk === "high"
+                          : ticket.sla_risk ===
+                            "high"
                           ? "sla-time high"
-                          : ticket.sla_risk === "medium"
+                          : ticket.sla_risk ===
+                            "medium"
                           ? "sla-time medium"
                           : "sla-time low"
                       }
                     >
-                      ⏱ {getRemainingTime(ticket.sla_deadline)}
+                      ⏱{" "}
+                      {getRemainingTime(
+                        ticket.sla_deadline
+                      )}
                     </span>
+
                   </td>
-                  
+
+
                   <td>
                     {ticket.assigned_agent ??
                       "Unassigned"}
                   </td>
 
+
                   <td>
+
                     <span
                       className={`status-badge ${ticket.status}`}
                     >
                       {ticket.status}
                     </span>
+
                   </td>
 
                 </tr>
@@ -441,7 +657,10 @@ function App() {
 
       </section>
 
-      {/* Agent Queue */}
+
+      {/* =========================
+          AGENT QUEUE
+      ========================== */}
 
       <section className="panel">
 
@@ -449,63 +668,74 @@ function App() {
 
         <div className="agent-list">
 
-          {dashboard?.agents.map((agent) => {
+          {dashboard?.agents.map(
+            (agent) => {
 
-            const percentage = Math.round(
-              (agent.load / agent.capacity) * 100
-            );
+              const percentage =
+                Math.round(
+                  (agent.load /
+                    agent.capacity) *
+                    100
+                );
 
-            return (
+              return (
 
-              <div
-                className="agent"
-                key={agent.name}
-              >
+                <div
+                  className="agent"
+                  key={agent.name}
+                >
 
-                <div className="agent-info">
+                  <div className="agent-info">
 
-                  <div>
+                    <div>
 
-                    <strong>
-                      {agent.name}
-                    </strong>
+                      <strong>
+                        {agent.name}
+                      </strong>
+
+                      <span>
+                        {agent.load} /{" "}
+                        {agent.capacity} tickets
+                      </span>
+
+                    </div>
+
 
                     <span>
-                      {agent.load} / {agent.capacity} tickets
+                      {agent.available
+                        ? "Available"
+                        : "Unavailable"}
                     </span>
 
                   </div>
 
-                  <span>
-                    {agent.available
-                      ? "Available"
-                      : "Unavailable"}
-                  </span>
+
+                  <div className="progress-background">
+
+                    <div
+                      className="progress"
+                      style={{
+                        width: `${percentage}%`,
+                      }}
+                    />
+
+                  </div>
 
                 </div>
 
-                <div className="progress-background">
+              );
 
-                  <div
-                    className="progress"
-                    style={{
-                      width: `${percentage}%`,
-                    }}
-                  />
-
-                </div>
-
-              </div>
-
-            );
-
-          })}
+            }
+          )}
 
         </div>
 
       </section>
 
-      {/* Automation Flow */}
+
+      {/* =========================
+          AUTOMATION FLOW
+      ========================== */}
 
       <section className="panel">
 
@@ -514,18 +744,23 @@ function App() {
         <div className="flow">
 
           <div>Ticket</div>
+
           <span>→</span>
 
           <div>Classify</div>
+
           <span>→</span>
 
           <div>Urgency</div>
+
           <span>→</span>
 
           <div>SLA Risk</div>
+
           <span>→</span>
 
           <div>Route</div>
+
           <span>→</span>
 
           <div>Escalate</div>
