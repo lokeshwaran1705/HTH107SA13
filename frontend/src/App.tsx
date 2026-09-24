@@ -22,6 +22,11 @@ interface Ticket {
   message: string;
   category: string;
   urgency: string;
+  frustration_score: number;
+  frustration_level: string;
+  is_duplicate: boolean;
+  duplicate_ticket_id: number | null;
+  duplicate_similarity: number;
   sla_deadline: string;
   sla_risk: string;
   status: string;
@@ -551,6 +556,8 @@ function App() {
                 <th>Customer</th>
                 <th>Category</th>
                 <th>Urgency</th>
+                <th>Frustration</th>
+                <th>Duplicate</th>
                 <th>SLA Risk</th>
                 <th>SLA Remaining</th>
                 <th>Agent</th>
@@ -589,6 +596,28 @@ function App() {
                       {ticket.urgency}
                     </span>
 
+                  </td>
+
+                  <td>
+
+                    <span
+                      className={`badge ${ticket.frustration_level}`}
+                    >
+                      😡 {ticket.frustration_score}/100
+                    </span>
+
+                  </td>
+
+                  <td>
+                    {ticket.is_duplicate ? (
+                      <span className="badge high">
+                        ⚠ {ticket.duplicate_similarity.toFixed(0)}%
+                      </span>
+                    ) : (
+                      <span className="badge low">
+                        ✓ No
+                      </span>
+                    )}
                   </td>
 
 

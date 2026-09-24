@@ -49,6 +49,26 @@ class Ticket(models.Model):
         default="medium"
     )
 
+    # Frustration detection
+    frustration_score = models.IntegerField(default=0)
+
+    frustration_level = models.CharField(
+        max_length=10,
+        default="low"
+    )
+
+    # Duplicate detection
+    is_duplicate = models.BooleanField(default=False)
+
+    duplicate_ticket_id = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
+    duplicate_similarity = models.FloatField(
+        default=0
+    )
+
     sla_deadline = models.DateTimeField()
 
     sla_risk = models.CharField(
@@ -75,6 +95,7 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.customer_name} - {self.category}"
+
 
 class Agent(models.Model):
 
