@@ -8,34 +8,31 @@ def calculate_sla_risk(ticket):
         ticket.sla_deadline - now
     ).total_seconds()
 
-    remaining_minutes = remaining_seconds / 60
-
-    # Critical: SLA already breached
-    if remaining_minutes <= 0:
-        return "high"
-
-    # High urgency tickets
+    # Total SLA window based on urgency
     if ticket.urgency == "high":
-        if remaining_minutes <= 60:
-            return "high"
-        elif remaining_minutes <= 240:
-            return "medium"
-        else:
-            return "low"
+        total_sla_seconds = 60 * 60       # 1 hour
 
-    # Medium urgency tickets
-    if ticket.urgency == "medium":
-        if remaining_minutes <= 60:
-            return "high"
-        elif remaining_minutes <= 180:
-            return "medium"
-        else:
-            return "low"
+    elif ticket.urgency == "medium":
+        total_sla_seconds = 4 * 60 * 60   # 4 hours
 
-    # Low urgency tickets
-    if remaining_minutes <= 30:
+    else:
+        total_sla_seconds = 8 * 60 * 60   # 8 hours
+
+    # Already breached
+    if remaining_seconds <= 0:
         return "high"
-    elif remaining_minutes <= 120:
+
+    # Calculate percentage of SLA time remaining
+    remaining_percentage = (
+        remaining_seconds / total_sla_seconds
+    ) * 100
+
+    # Risk thresholds
+    if remaining_percentage > 50:
+        return "low"
+
+    elif remaining_percentage >= 15:
         return "medium"
 
-    return "low"
+    else:
+        return "high"
