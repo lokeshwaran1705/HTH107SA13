@@ -2,6 +2,8 @@ from datetime import timedelta
 
 from django.utils import timezone
 from rest_framework import viewsets
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Ticket
 from .serializers import TicketSerializer
@@ -9,6 +11,7 @@ from .automation import classify_ticket
 from .sla_engine import calculate_sla_risk
 from .routing import assign_agent
 from .escalation import escalate_ticket
+from .dashboard import get_dashboard_stats
 
 
 class TicketViewSet(viewsets.ModelViewSet):
@@ -18,7 +21,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         message = serializer.validated_data["message"]
 
-        # 1. Classify ticket
+        # 1. Automatically classify ticket
         category, urgency = classify_ticket(message)
 
         # 2. Automatically set SLA duration
@@ -54,3 +57,9 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         # 7. Escalate if necessary
         escalate_ticket(ticket)
+
+
+@api_view(["GET"])
+def dashboard_stats(request):
+    stats = get_dashboard_stats()
+    return Response(stats)
