@@ -9,7 +9,7 @@ def get_dashboard_stats():
     ).count()
 
     escalated_tickets = Ticket.objects.filter(
-        status="escalated"
+        status="Escalated"
     ).count()
 
     high_risk_tickets = Ticket.objects.filter(

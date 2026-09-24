@@ -102,7 +102,7 @@ function App() {
     const pollInterval = setInterval(() => {
       loadDashboard();
       loadTickets();
-    }, 10000);
+    }, 3000);
 
     return () => clearInterval(pollInterval);
   }, []);
