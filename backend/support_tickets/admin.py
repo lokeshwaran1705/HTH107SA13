@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ticket
+from .models import Ticket, Agent
 
 
 @admin.register(Ticket)
@@ -27,4 +27,22 @@ class TicketAdmin(admin.ModelAdmin):
         "customer_name",
         "message",
         "assigned_agent",
+    )
+
+@admin.register(Agent)
+class AgentAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "current_load",
+        "capacity",
+        "is_available",
+    )
+
+    list_filter = (
+        "is_available",
+    )
+
+    search_fields = (
+        "name",
     )

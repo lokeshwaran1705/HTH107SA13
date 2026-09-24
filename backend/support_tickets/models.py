@@ -75,3 +75,20 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.customer_name} - {self.category}"
+
+class Agent(models.Model):
+
+    name = models.CharField(max_length=100)
+
+    skills = models.JSONField(default=list)
+
+    current_load = models.IntegerField(default=0)
+
+    capacity = models.IntegerField(default=5)
+
+    is_available = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
