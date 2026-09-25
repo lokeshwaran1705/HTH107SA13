@@ -46,6 +46,8 @@ def calculate_frustration(message):
     complaint_words = [
         "no response",
         "nobody helped",
+        "nobody has solved",
+        "nobody solved",
         "not solved",
         "not fixed",
         "waiting",
@@ -70,10 +72,10 @@ def calculate_frustration(message):
     )
 
     # Score calculation
-    score += min(negative_count * 15, 30)
-    score += min(repeat_count * 20, 25)
+    score += min(negative_count * 20, 30)
+    score += min(repeat_count * 25, 30)
     score += min(urgency_count * 10, 20)
-    score += min(complaint_count * 10, 20)
+    score += min(complaint_count * 15, 25)
 
     # Excessive punctuation
     if "!!!" in message:
